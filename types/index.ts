@@ -42,27 +42,49 @@ export interface AppState {
   showFavoritesOnly: boolean
 }
 
+// ── Database type ─────────────────────────────────────────────────────────────
+// Harus menggunakan struktur yang kompatibel dengan @supabase/supabase-js v2.44+
+// Field `Relationships` wajib ada agar generics bisa di-resolve dengan benar
+// dan tidak jatuh ke `never` saat memanggil .update(), .insert(), dsb.
 export interface Database {
   public: {
     Tables: {
       entries: {
         Row: Entry
         Insert: {
+          user_id: string
           type: EntryType
           title?: string | null
           content: string
           tags?: string[]
           is_favorite?: boolean
+          created_at?: string
+          updated_at?: string
         }
-        // Inline — tidak pakai alias agar Supabase dapat resolve generics dengan benar
         Update: {
+          user_id?: string
           type?: EntryType
           title?: string | null
           content?: string
           tags?: string[]
           is_favorite?: boolean
+          updated_at?: string
         }
+        // WAJIB di supabase-js v2.44+ agar TypeScript tidak resolve ke `never`
+        Relationships: []
       }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
