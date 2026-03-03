@@ -3,18 +3,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateUpdateEntry, parseTags, isValidUUID } from '@/lib/validation'
 import { checkRateLimit, WRITE_RATE_LIMIT, getClientIP, rateLimitHeaders } from '@/lib/rate-limit'
-import type { Database } from '@/types'
-
-type EntryUpdate = Database['public']['Tables']['entries']['Update']
+import type { Entry } from '@/types'
 
 const SELECT_COLUMNS = 'id,user_id,type,title,content,tags,is_favorite,created_at,updated_at'
+
+// Next.js 16: gunakan named type alias dan ambil params dari segmentData
+// (bukan destructure di signature) untuk menghindari type variance conflict
+// dengan RouteHandlerConfig internal Next.js 16.
+type RouteContext = { params: Promise<{ id: string }> }
 
 // ── PATCH /api/entries/:id ────────────────────────────────────────────────────
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
+  segmentData: RouteContext
+): Promise<Response> {
+  const { id } = await segmentData.params
 
   if (!isValidUUID(id)) {
     return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 })
@@ -51,12 +54,19 @@ export async function PATCH(
 
   const b = body as Record<string, unknown>
 
-  // Pakai EntryUpdate (alias dari Database['public']['Tables']['entries']['Update'])
-  // agar Supabase TypeScript generics bisa resolve dengan benar
-  const update: EntryUpdate = {}
+  // Definisikan tipe update secara inline (tidak dari Database generics)
+  // agar tidak bergantung pada Supabase type inference yang bisa resolve ke `never`
+  const update: {
+    content?: string
+    title?: string | null
+    type?: 'word' | 'sentence' | 'explanation'
+    tags?: string[]
+    is_favorite?: boolean
+  } = {}
+
   if (b.content     !== undefined) update.content     = String(b.content).trim()
   if (b.title       !== undefined) update.title       = b.title ? String(b.title).trim() : null
-  if (b.type        !== undefined) update.type        = b.type as EntryUpdate['type']
+  if (b.type        !== undefined) update.type        = b.type as typeof update.type
   if (b.tags        !== undefined) update.tags        = parseTags(b.tags as string[])
   if (b.is_favorite !== undefined) update.is_favorite = Boolean(b.is_favorite)
 
@@ -64,12 +74,17 @@ export async function PATCH(
     return NextResponse.json({ error: 'Tidak ada field yang diupdate' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  // Cast result ke Entry secara eksplisit — Supabase tidak bisa infer return type
+  // dari partial SELECT_COLUMNS string, menyebabkan `data` bertipe `never`.
+  // Cast ini aman karena kolom yang dipilih sesuai dengan interface Entry.
+  const { data: rawData, error } = await supabase
     .from('entries')
     .update(update)
     .eq('id', id)
     .select(SELECT_COLUMNS)
     .single()
+
+  const data = rawData as Entry | null
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -85,9 +100,9 @@ export async function PATCH(
 // ── DELETE /api/entries/:id ───────────────────────────────────────────────────
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
+  segmentData: RouteContext
+): Promise<Response> {
+  const { id } = await segmentData.params
 
   if (!isValidUUID(id)) {
     return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 })
