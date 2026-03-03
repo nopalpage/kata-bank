@@ -1,125 +1,217 @@
-// app/api/entries/[id]/route.ts
+// app/api/entries/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { validateUpdateEntry, parseTags, isValidUUID } from '@/lib/validation'
-import { checkRateLimit, WRITE_RATE_LIMIT, getClientIP, rateLimitHeaders } from '@/lib/rate-limit'
-import type { Database } from '@/types'
+import {
+  validateCreateEntry,
+  parseTags,
+  VALID_SORTS,
+  VALID_TYPES,
+  LIMITS,
+} from '@/lib/validation'
+import {
+  checkRateLimit,
+  WRITE_RATE_LIMIT,
+  getClientIP,
+  rateLimitHeaders,
+} from '@/lib/rate-limit'
+import type { EntryType, Database } from '@/types'
 
-const SELECT_COLUMNS = 'id,user_id,type,title,content,tags,is_favorite,created_at,updated_at'
+const SELECT_COLUMNS =
+  'id,user_id,type,title,content,tags,is_favorite,created_at,updated_at'
 
-// Tipe update yang aman — didefinisikan langsung dari Database generics
-// tanpa alias `EntryUpdate` yang menyebabkan TypeScript salah resolve ke `never`
-type EntryUpdate = Database['public']['Tables']['entries']['Update']
-
-// ── PATCH /api/entries/:id ────────────────────────────────────────────────────
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-
-  if (!isValidUUID(id)) {
-    return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 })
-  }
-
-  const ip = getClientIP(request)
-  const rl = checkRateLimit(`write:${ip}`, WRITE_RATE_LIMIT)
-  if (!rl.success) {
-    return NextResponse.json(
-      { error: 'Terlalu banyak request.' },
-      { status: 429, headers: rateLimitHeaders(rl) }
-    )
-  }
-
+// ── GET /api/entries ──────────────────────────────────────────────────────────
+export async function GET(request: NextRequest) {
   const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const contentLength = parseInt(request.headers.get('content-length') ?? '0', 10)
+  const { searchParams } = request.nextUrl
+  const type = searchParams.get('type')
+  const tag = searchParams.get('tag')
+  const sort = searchParams.get('sort') ?? 'newest'
+  const favorites = searchParams.get('favorites') === 'true'
+  const search = searchParams.get('search')?.trim()
+  const cursor = searchParams.get('cursor')
+  const limit = Math.min(
+    parseInt(searchParams.get('limit') ?? String(LIMITS.PAGE_SIZE), 10) ||
+    LIMITS.PAGE_SIZE,
+    LIMITS.MAX_PAGE_SIZE,
+  )
+
+  if (type && type !== 'all' && !VALID_TYPES.includes(type as never)) {
+    return NextResponse.json({ error: 'Tipe tidak valid' }, { status: 400 })
+  }
+  if (!VALID_SORTS.includes(sort as never)) {
+    return NextResponse.json({ error: 'Sort tidak valid' }, { status: 400 })
+  }
+  if (tag && tag.length > LIMITS.TAG_MAX_LENGTH) {
+    return NextResponse.json({ error: 'Tag terlalu panjang' }, { status: 400 })
+  }
+
+  let query = supabase.from('entries').select(SELECT_COLUMNS)
+
+  if (type && type !== 'all') query = query.eq('type', type)
+  if (tag) query = query.contains('tags', [tag])
+  if (favorites) query = query.eq('is_favorite', true)
+
+  if (search && search.length >= 2) {
+    query = query.textSearch('content', search, {
+      type: 'websearch',
+      config: 'indonesian',
+    })
+  }
+
+  // Cursor pagination
+  if (cursor) {
+    if (sort === 'oldest') {
+      query = query.gt('created_at', cursor)
+    } else if (sort === 'alpha-asc') {
+      query = query.gt('content', cursor)
+    } else if (sort === 'alpha-desc') {
+      query = query.lt('content', cursor)
+    } else {
+      query = query.lt('created_at', cursor)
+    }
+  }
+
+  switch (sort) {
+    case 'oldest':
+      query = query.order('created_at', { ascending: true })
+      break
+    case 'alpha-asc':
+      query = query.order('content', { ascending: true })
+      break
+    case 'alpha-desc':
+      query = query.order('content', { ascending: false })
+      break
+    default:
+      query = query.order('created_at', { ascending: false })
+  }
+
+  query = query.limit(limit + 1)
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('[GET /api/entries]', error.code, error.message)
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 },
+    )
+  }
+
+  const hasMore = (data?.length ?? 0) > limit
+  const items = hasMore ? data!.slice(0, limit) : (data ?? [])
+
+  let nextCursor: string | null = null
+  if (hasMore && items.length > 0) {
+    const last = items[items.length - 1] as Record<string, unknown>
+    nextCursor =
+      sort === 'alpha-asc' || sort === 'alpha-desc'
+        ? String(last.content)
+        : String(last.created_at)
+  }
+
+  return NextResponse.json(
+    { data: items, hasMore, nextCursor },
+    {
+      headers: {
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+      },
+    },
+  )
+}
+
+// ── POST /api/entries ─────────────────────────────────────────────────────────
+export async function POST(request: NextRequest) {
+  const ip = getClientIP(request)
+  const rl = checkRateLimit(`write:${ip}`, WRITE_RATE_LIMIT)
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: 'Terlalu banyak request. Tunggu sebentar.' },
+      { status: 429, headers: rateLimitHeaders(rl) },
+    )
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const contentLength = parseInt(
+    request.headers.get('content-length') ?? '0',
+    10,
+  )
   if (contentLength > 20_000) {
-    return NextResponse.json({ error: 'Payload terlalu besar' }, { status: 413 })
+    return NextResponse.json(
+      { error: 'Payload terlalu besar' },
+      { status: 413 },
+    )
   }
 
   let body: unknown
-  try { body = await request.json() }
-  catch { return NextResponse.json({ error: 'Format JSON tidak valid' }, { status: 400 }) }
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json(
+      { error: 'Format JSON tidak valid' },
+      { status: 400 },
+    )
+  }
 
-  const errors = validateUpdateEntry(body)
+  const errors = validateCreateEntry(body)
   if (errors.length > 0) {
-    return NextResponse.json({ error: errors[0].message, errors }, { status: 422 })
+    return NextResponse.json(
+      { error: errors[0].message, errors },
+      { status: 422 },
+    )
   }
 
-  const b = body as Record<string, unknown>
-
-  // Bangun object update secara eksplisit — tidak menggunakan type alias
-  // agar Supabase TS generics dapat me-resolve tipe dengan benar
-  const update: EntryUpdate = {}
-  if (b.content     !== undefined) update.content     = String(b.content).trim()
-  if (b.title       !== undefined) update.title       = b.title ? String(b.title).trim() : null
-  if (b.type        !== undefined) update.type        = b.type as EntryUpdate['type']
-  if (b.tags        !== undefined) update.tags        = parseTags(b.tags as string[])
-  if (b.is_favorite !== undefined) update.is_favorite = Boolean(b.is_favorite)
-
-  if (Object.keys(update).length === 0) {
-    return NextResponse.json({ error: 'Tidak ada field yang diupdate' }, { status: 400 })
+  const b = body as {
+    type: string
+    content: string
+    title?: string
+    tags?: string[]
   }
 
-  // Cast ke `Omit<EntryUpdate, never>` agar Supabase client tidak ambiguous
+  type InsertRow = Database['public']['Tables']['entries']['Insert']
+
+  const insertPayload: InsertRow = {
+    user_id: user.id,
+    type: b.type as EntryType,
+    title: b.title?.trim() || null,
+    content: b.content.trim(),
+    tags: parseTags(b.tags ?? []),
+    is_favorite: false,
+  }
+
   const { data, error } = await supabase
     .from('entries')
-    .update(update as NonNullable<typeof update>)
-    .eq('id', id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .insert(insertPayload as any)
     .select(SELECT_COLUMNS)
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      return NextResponse.json({ error: 'Entry tidak ditemukan' }, { status: 404 })
-    }
-    console.error('[PATCH /api/entries/:id]', error.code, error.message)
-    return NextResponse.json({ error: 'Gagal memperbarui entry' }, { status: 500 })
-  }
-
-  return NextResponse.json({ data }, { headers: rateLimitHeaders(rl) })
-}
-
-// ── DELETE /api/entries/:id ───────────────────────────────────────────────────
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-
-  if (!isValidUUID(id)) {
-    return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 })
-  }
-
-  const ip = getClientIP(request)
-  const rl = checkRateLimit(`write:${ip}`, WRITE_RATE_LIMIT)
-  if (!rl.success) {
+    console.error('[POST /api/entries]', error.code, error.message)
     return NextResponse.json(
-      { error: 'Terlalu banyak request.' },
-      { status: 429, headers: rateLimitHeaders(rl) }
+      { error: 'Gagal menyimpan entry' },
+      { status: 500 },
     )
   }
 
-  const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const { error } = await supabase
-    .from('entries')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error('[DELETE /api/entries/:id]', error.code, error.message)
-    return NextResponse.json({ error: 'Gagal menghapus entry' }, { status: 500 })
-  }
-
-  return NextResponse.json({ success: true }, { headers: rateLimitHeaders(rl) })
+  return NextResponse.json(
+    { data },
+    { status: 201, headers: rateLimitHeaders(rl) },
+  )
 }
