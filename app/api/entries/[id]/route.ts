@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateUpdateEntry, parseTags, isValidUUID } from '@/lib/validation'
 import { checkRateLimit, WRITE_RATE_LIMIT, getClientIP, rateLimitHeaders } from '@/lib/rate-limit'
-import type { UpdateEntryInput } from '@/types'
+import type { Database } from '@/types'
+
+type EntryUpdate = Database['public']['Tables']['entries']['Update']
 
 const SELECT_COLUMNS = 'id,user_id,type,title,content,tags,is_favorite,created_at,updated_at'
 
@@ -49,11 +51,12 @@ export async function PATCH(
 
   const b = body as Record<string, unknown>
 
-  // Bangun object update dengan tipe eksplisit UpdateEntryInput (bukan Record<string, unknown>)
-  const update: UpdateEntryInput = {}
+  // Pakai EntryUpdate (alias dari Database['public']['Tables']['entries']['Update'])
+  // agar Supabase TypeScript generics bisa resolve dengan benar
+  const update: EntryUpdate = {}
   if (b.content     !== undefined) update.content     = String(b.content).trim()
   if (b.title       !== undefined) update.title       = b.title ? String(b.title).trim() : null
-  if (b.type        !== undefined) update.type        = b.type as UpdateEntryInput['type']
+  if (b.type        !== undefined) update.type        = b.type as EntryUpdate['type']
   if (b.tags        !== undefined) update.tags        = parseTags(b.tags as string[])
   if (b.is_favorite !== undefined) update.is_favorite = Boolean(b.is_favorite)
 
@@ -61,7 +64,6 @@ export async function PATCH(
     return NextResponse.json({ error: 'Tidak ada field yang diupdate' }, { status: 400 })
   }
 
-  // RLS Supabase otomatis pastikan user hanya bisa update miliknya
   const { data, error } = await supabase
     .from('entries')
     .update(update)

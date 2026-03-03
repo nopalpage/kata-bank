@@ -15,7 +15,16 @@ export interface Entry {
 }
 
 export type CreateEntryInput = Pick<Entry, 'type' | 'title' | 'content' | 'tags'>
-export type UpdateEntryInput = Partial<Pick<Entry, 'type' | 'title' | 'content' | 'tags' | 'is_favorite'>>
+
+// Gunakan interface eksplisit (bukan Partial<Pick<...>>) agar kompatibel
+// dengan Supabase TypeScript generics di strict mode
+export type UpdateEntryInput = {
+  type?: EntryType
+  title?: string | null
+  content?: string
+  tags?: string[]
+  is_favorite?: boolean
+}
 
 export type SortOption = 'newest' | 'oldest' | 'alpha-asc' | 'alpha-desc'
 export type FilterType = 'all' | EntryType
@@ -38,8 +47,21 @@ export interface Database {
     Tables: {
       entries: {
         Row: Entry
-        Insert: Omit<Entry, 'id' | 'user_id' | 'created_at' | 'updated_at'>
-        Update: UpdateEntryInput
+        Insert: {
+          type: EntryType
+          title?: string | null
+          content: string
+          tags?: string[]
+          is_favorite?: boolean
+        }
+        // Inline — tidak pakai alias agar Supabase dapat resolve generics dengan benar
+        Update: {
+          type?: EntryType
+          title?: string | null
+          content?: string
+          tags?: string[]
+          is_favorite?: boolean
+        }
       }
     }
   }
