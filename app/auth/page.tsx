@@ -65,7 +65,7 @@ export default function AuthPage() {
     }}>
       {/* Logo */}
       <div style={{
-        fontFamily: "'Playfair Display', serif", fontSize: '2rem',
+        fontFamily: 'var(--font-playfair), serif', fontSize: '2rem',
         fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.5px'
       }}>
         Lexi<span style={{ color: 'var(--accent)' }}>ca</span>
@@ -87,7 +87,7 @@ export default function AuthPage() {
           {(['login', 'signup'] as const).map(m => (
             <button key={m} onClick={() => { setMode(m); setMessage(null) }} style={{
               flex: 1, padding: '8px', borderRadius: '6px', border: 'none',
-              cursor: 'pointer', fontSize: '0.85rem', fontFamily: "'DM Sans', sans-serif",
+              cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'var(--font-dm-sans), sans-serif',
               fontWeight: 500, transition: 'all 0.15s',
               background: mode === m ? 'var(--surface3)' : 'transparent',
               color: mode === m ? 'var(--text)' : 'var(--text3)',
@@ -130,7 +130,7 @@ export default function AuthPage() {
           <button type="submit" disabled={loading} style={{
             padding: '11px', borderRadius: '8px', border: 'none',
             background: 'var(--accent)', color: '#0e0e11',
-            fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
+            fontFamily: 'var(--font-dm-sans), sans-serif', fontWeight: 600,
             fontSize: '0.9rem', cursor: loading ? 'not-allowed' : 'pointer',
             opacity: loading ? 0.7 : 1, transition: 'all 0.15s'
           }}>
@@ -147,7 +147,7 @@ export default function AuthPage() {
         <button onClick={handleGoogle} disabled={loading} style={{
           width: '100%', padding: '10px', borderRadius: '8px',
           border: '1px solid var(--border)', background: 'var(--surface2)',
-          color: 'var(--text2)', fontFamily: "'DM Sans', sans-serif",
+          color: 'var(--text2)', fontFamily: 'var(--font-dm-sans), sans-serif',
           fontSize: '0.85rem', cursor: 'pointer', display: 'flex',
           alignItems: 'center', justifyContent: 'center', gap: '8px',
           transition: 'all 0.15s'
@@ -168,7 +168,7 @@ export default function AuthPage() {
 const inputStyle: React.CSSProperties = {
   padding: '10px 14px', borderRadius: '8px',
   border: '1px solid var(--border)', background: 'var(--surface2)',
-  color: 'var(--text)', fontFamily: "'DM Sans', sans-serif",
+  color: 'var(--text)', fontFamily: 'var(--font-dm-sans), sans-serif',
   fontSize: '0.88rem', outline: 'none', width: '100%',
   transition: 'border-color 0.15s',
 }

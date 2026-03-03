@@ -37,3 +37,9 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# google drive
+.gdoc
+.gsheet
+.gslides
+*desktop.ini

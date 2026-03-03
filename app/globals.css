@@ -28,7 +28,7 @@ html { height: 100%; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-dm-sans), sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -70,7 +70,7 @@ mark {
   padding: 10px 20px;
   border-radius: 99px;
   font-size: 0.85rem;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-dm-sans), sans-serif;
   z-index: 9999;
   white-space: nowrap;
   animation: toastIn 0.2s ease, toastOut 0.2s ease 2s forwards;
