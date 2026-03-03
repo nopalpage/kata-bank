@@ -1,10 +1,9 @@
 // app/api/entries/[id]/route.ts
-// PATCH: update entry | DELETE: hapus entry
-
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateUpdateEntry, parseTags, isValidUUID } from '@/lib/validation'
 import { checkRateLimit, WRITE_RATE_LIMIT, getClientIP, rateLimitHeaders } from '@/lib/rate-limit'
+import type { UpdateEntryInput } from '@/types'
 
 const SELECT_COLUMNS = 'id,user_id,type,title,content,tags,is_favorite,created_at,updated_at'
 
@@ -15,7 +14,6 @@ export async function PATCH(
 ) {
   const { id } = await params
 
-  // Validasi format UUID — cegah SQL/path injection
   if (!isValidUUID(id)) {
     return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 })
   }
@@ -51,19 +49,19 @@ export async function PATCH(
 
   const b = body as Record<string, unknown>
 
-  // Bangun object update hanya dengan field yang dikirim
-  const update: Record<string, unknown> = {}
-  if (b.content  !== undefined) update.content  = String(b.content).trim()
-  if (b.title    !== undefined) update.title    = b.title ? String(b.title).trim() : null
-  if (b.type     !== undefined) update.type     = b.type
-  if (b.tags     !== undefined) update.tags     = parseTags(b.tags as string[])
+  // Bangun object update dengan tipe eksplisit UpdateEntryInput (bukan Record<string, unknown>)
+  const update: UpdateEntryInput = {}
+  if (b.content     !== undefined) update.content     = String(b.content).trim()
+  if (b.title       !== undefined) update.title       = b.title ? String(b.title).trim() : null
+  if (b.type        !== undefined) update.type        = b.type as UpdateEntryInput['type']
+  if (b.tags        !== undefined) update.tags        = parseTags(b.tags as string[])
   if (b.is_favorite !== undefined) update.is_favorite = Boolean(b.is_favorite)
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'Tidak ada field yang diupdate' }, { status: 400 })
   }
 
-  // RLS di Supabase otomatis pastikan user hanya bisa update miliknya
+  // RLS Supabase otomatis pastikan user hanya bisa update miliknya
   const { data, error } = await supabase
     .from('entries')
     .update(update)
@@ -72,7 +70,6 @@ export async function PATCH(
     .single()
 
   if (error) {
-    // PGRST116 = row tidak ditemukan (karena RLS atau memang tidak ada)
     if (error.code === 'PGRST116') {
       return NextResponse.json({ error: 'Entry tidak ditemukan' }, { status: 404 })
     }
@@ -109,7 +106,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // RLS pastikan user hanya bisa hapus miliknya
   const { error } = await supabase
     .from('entries')
     .delete()

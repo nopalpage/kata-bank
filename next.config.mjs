@@ -35,8 +35,9 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   images: { formats: ['image/avif', 'image/webp'], minimumCacheTTL: 86400 },
-  // optimizePackageImports sudah stable di Next.js 16, tidak perlu di bawah experimental
-  optimizePackageImports: ['@supabase/supabase-js', '@supabase/ssr'],
+  experimental: {
+    optimizePackageImports: ['@supabase/supabase-js', '@supabase/ssr'],
+  },
   async headers() {
     return [
       { source: '/(.*)', headers: securityHeaders },
