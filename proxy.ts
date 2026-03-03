@@ -2,6 +2,7 @@
 // Tugas: (1) refresh session, (2) auth guard, (3) rate limit auth endpoints
 
 import { createServerClient } from '@supabase/ssr'
+import type { CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { checkRateLimit, AUTH_RATE_LIMIT, API_RATE_LIMIT, getClientIP, rateLimitHeaders } from '@/lib/rate-limit'
 
@@ -39,7 +40,7 @@ export async function proxy(request: NextRequest) {
     {
       cookies: {
         getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -53,8 +54,8 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // ── Auth guard ───────────────────────────────────────────────────────────────
-  const isAuthPage    = pathname.startsWith('/auth')
-  const isApiRoute    = pathname.startsWith('/api')
+  const isAuthPage = pathname.startsWith('/auth')
+  const isApiRoute = pathname.startsWith('/api')
   const isStaticRoute = pathname.startsWith('/_next') || pathname.includes('.')
 
   if (!user && !isAuthPage && !isApiRoute && !isStaticRoute) {
