@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // Cursor pagination — FIX: gunakan if/else bukan ternary expression statement
+  // Cursor pagination — if/else, bukan ternary expression statement
   if (cursor) {
     if (sort === 'oldest') {
       query = query.gt('created_at', cursor)
