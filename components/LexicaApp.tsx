@@ -62,7 +62,7 @@ function exportCSV(entries: Entry[]) {
   const header = 'id,type,title,content,tags,is_favorite,created_at\n'
   const rows = entries.map(e =>
     [e.id, e.type, e.title ?? '', `"${e.content.replace(/"/g, '""')}"`,
-     e.tags.join(';'), e.is_favorite, e.created_at].join(',')
+    e.tags.join(';'), e.is_favorite, e.created_at].join(',')
   ).join('\n')
   const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -85,17 +85,24 @@ export default function LexicaApp({ user, initialEntries }: Props) {
   const [entries, setEntries] = useState<Entry[]>(initialEntries)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
 
+  // ── Theme State ──
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [isMounted, setIsMounted] = useState(false)
+
+  // ── Import JSON State ──
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // ── Filter/sort state ──
   const [currentFilter, setCurrentFilter] = useState<FilterType>('all')
-  const [currentTag, setCurrentTag]       = useState<string | null>(null)
-  const [sortOption, setSortOption]       = useState<SortOption>('newest')
+  const [currentTag, setCurrentTag] = useState<string | null>(null)
+  const [sortOption, setSortOption] = useState<SortOption>('newest')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
 
   // ── Search state ──
   const [activeModes, setActiveModes] = useState<Set<SearchMode>>(new Set(['prefix']))
-  const [rawPrefix, setRawPrefix]     = useState('')
-  const [rawMiddle, setRawMiddle]     = useState('')
-  const [rawSuffix, setRawSuffix]     = useState('')
+  const [rawPrefix, setRawPrefix] = useState('')
+  const [rawMiddle, setRawMiddle] = useState('')
+  const [rawSuffix, setRawSuffix] = useState('')
 
   // Debounce search inputs — filter tidak berjalan saat tiap keystroke
   const currentPrefix = useDebounce(rawPrefix, 150)
@@ -103,17 +110,17 @@ export default function LexicaApp({ user, initialEntries }: Props) {
   const currentSuffix = useDebounce(rawSuffix, 150)
 
   // ── Form state ──
-  const [currentType, setCurrentType]   = useState<EntryType>('word')
-  const [formContent, setFormContent]   = useState('')
-  const [formTitle, setFormTitle]       = useState('')
-  const [formTags, setFormTags]         = useState('')
-  const [saving, setSaving]             = useState(false)
+  const [currentType, setCurrentType] = useState<EntryType>('word')
+  const [formContent, setFormContent] = useState('')
+  const [formTitle, setFormTitle] = useState('')
+  const [formTags, setFormTags] = useState('')
+  const [saving, setSaving] = useState(false)
 
   // ── Edit state ──
-  const [editingId, setEditingId]       = useState<string | null>(null)
-  const [editContent, setEditContent]   = useState('')
-  const [editTitle, setEditTitle]       = useState('')
-  const [editTags, setEditTags]         = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
+  const [editTitle, setEditTitle] = useState('')
+  const [editTags, setEditTags] = useState('')
 
   // ── Modal state ──
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
@@ -147,6 +154,22 @@ export default function LexicaApp({ user, initialEntries }: Props) {
 
     return () => { supabase.removeChannel(channel) }
   }, [supabase, user.id])
+
+  // ── Theme Side-Effects ────────────────────────────────────────────────────
+  useEffect(() => {
+    setIsMounted(true)
+    const saved = localStorage.getItem('lexica-theme') as 'dark' | 'light'
+    if (saved) setTheme(saved)
+  }, [])
+
+  useEffect(() => {
+    if (isMounted) {
+      document.documentElement.setAttribute('data-theme', theme)
+      localStorage.setItem('lexica-theme', theme)
+    }
+  }, [theme, isMounted])
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   // Cleanup in-flight requests on unmount
   useEffect(() => {
@@ -305,15 +328,15 @@ export default function LexicaApp({ user, initialEntries }: Props) {
   const lowerPrefix = useMemo(() => currentPrefix.toLowerCase(), [currentPrefix])
   const lowerMiddle = useMemo(() => currentMiddle.toLowerCase(), [currentMiddle])
   const lowerSuffix = useMemo(() => currentSuffix.toLowerCase(), [currentSuffix])
-  const hasSearch   = useMemo(
+  const hasSearch = useMemo(
     () => !!(currentPrefix || currentMiddle || currentSuffix),
     [currentPrefix, currentMiddle, currentSuffix]
   )
 
   const scoreWord = useCallback((w: string): boolean => {
     if (activeModes.has('prefix') && lowerPrefix && !w.startsWith(lowerPrefix)) return false
-    if (activeModes.has('middle') && lowerMiddle && !w.includes(lowerMiddle))   return false
-    if (activeModes.has('suffix') && lowerSuffix && !w.endsWith(lowerSuffix))   return false
+    if (activeModes.has('middle') && lowerMiddle && !w.includes(lowerMiddle)) return false
+    if (activeModes.has('suffix') && lowerSuffix && !w.endsWith(lowerSuffix)) return false
     return true
   }, [activeModes, lowerPrefix, lowerMiddle, lowerSuffix])
 
@@ -332,9 +355,9 @@ export default function LexicaApp({ user, initialEntries }: Props) {
   // useMemo — recalc hanya saat dependencies berubah
   const filtered = useMemo((): Entry[] => {
     let list = entries
-    if (currentFilter !== 'all')  list = list.filter(e => e.type === currentFilter)
-    if (currentTag)               list = list.filter(e => e.tags.includes(currentTag!))
-    if (showFavoritesOnly)        list = list.filter(e => e.is_favorite)
+    if (currentFilter !== 'all') list = list.filter(e => e.type === currentFilter)
+    if (currentTag) list = list.filter(e => e.tags.includes(currentTag!))
+    if (showFavoritesOnly) list = list.filter(e => e.is_favorite)
 
     if (hasSearch) {
       return list
@@ -389,10 +412,10 @@ export default function LexicaApp({ user, initialEntries }: Props) {
 
   const listTitle = useMemo(() =>
     showFavoritesOnly ? '⭐ Favorit'
-    : currentTag      ? `#${currentTag}`
-    : currentFilter === 'all' ? 'Semua catatan'
-    : TYPE_LABEL[currentFilter as EntryType],
-  [showFavoritesOnly, currentTag, currentFilter])
+      : currentTag ? `#${currentTag}`
+        : currentFilter === 'all' ? 'Semua catatan'
+          : TYPE_LABEL[currentFilter as EntryType],
+    [showFavoritesOnly, currentTag, currentFilter])
 
   // ── Highlight search ─────────────────────────────────────────────────────
   const highlightSearch = useCallback((text: string): string => {
@@ -447,6 +470,44 @@ export default function LexicaApp({ user, initialEntries }: Props) {
     setFormContent(''); setFormTitle(''); setFormTags('')
   }, [])
 
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string
+        const imported = JSON.parse(text)
+        if (!Array.isArray(imported)) throw new Error('Format salah')
+
+        const validEntries = imported.filter(x => x.type && x.content)
+        if (validEntries.length === 0) throw new Error('Kosong atau invalid')
+
+        showToast('Mengimpor data... mohon tunggu.')
+
+        let successCount = 0
+        for (const entry of validEntries) {
+          const input: CreateEntryInput = {
+            type: entry.type,
+            title: entry.title || null,
+            content: entry.content,
+            tags: Array.isArray(entry.tags) ? entry.tags : [],
+          }
+          const saved = await apiSave(input)
+          if (saved) {
+            setEntries(prev => [saved, ...prev])
+            successCount++
+          }
+        }
+        showToast(`✅ ${successCount} entri berhasil diimpor!`)
+      } catch (err) {
+        showToast('❌ Gagal import JSON. Format kembalian salah.')
+      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+    reader.readAsText(file)
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -462,14 +523,18 @@ export default function LexicaApp({ user, initialEntries }: Props) {
           <span className="lx-sync-label">
             {syncStatus === 'syncing' ? 'Menyimpan...'
               : syncStatus === 'error' ? 'Error sync'
-              : 'Tersinkron'}
+                : 'Tersinkron'}
           </span>
         </div>
 
         <div className="lx-header-stats">
-          <StatBadge num={counts.word}        label="Kata"       color="var(--word-color)" />
-          <StatBadge num={counts.sentence}    label="Kalimat"    color="var(--sentence-color)" />
+          <StatBadge num={counts.word} label="Kata" color="var(--word-color)" />
+          <StatBadge num={counts.sentence} label="Kalimat" color="var(--sentence-color)" />
           <StatBadge num={counts.explanation} label="Penjelasan" color="var(--explanation-color)" />
+
+          <button className="lx-icon-btn" style={{ marginLeft: 10 }} onClick={toggleTheme} aria-label="Toggle Theme">
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
 
           <div className="lx-user-menu">
             <div className="lx-avatar" title={user.email}>
@@ -477,8 +542,12 @@ export default function LexicaApp({ user, initialEntries }: Props) {
             </div>
             <div className="lx-user-dropdown">
               <div className="lx-dropdown-email">{user.email}</div>
+
+              <input type="file" accept="application/json" style={{ display: 'none' }}
+                ref={fileInputRef} onChange={handleImportJSON} />
+              <button onClick={() => fileInputRef.current?.click()} className="lx-dropdown-item">📥 Import JSON</button>
               <button onClick={() => exportJSON(entries)} className="lx-dropdown-item">📦 Export JSON</button>
-              <button onClick={() => exportCSV(entries)}  className="lx-dropdown-item">📊 Export CSV</button>
+              <button onClick={() => exportCSV(entries)} className="lx-dropdown-item">📊 Export CSV</button>
               <div className="lx-dropdown-divider" />
               <button onClick={signOut} className="lx-dropdown-item danger">🚪 Keluar</button>
             </div>
@@ -571,20 +640,20 @@ export default function LexicaApp({ user, initialEntries }: Props) {
               {sortedTags.length === 0
                 ? <span className="lx-no-tags">Belum ada tag</span>
                 : <>
-                    {currentTag && (
-                      <span className="lx-tag-chip clear-tag" onClick={() => setCurrentTag(null)}
-                        role="button" tabIndex={0}>✕ semua</span>
-                    )}
-                    {sortedTags.map(([tag, count]) => (
-                      <span key={tag} role="listitem"
-                        className={`lx-tag-chip${currentTag === tag ? ' active' : ''}`}
-                        onClick={() => handleTagClick(tag)}
-                        tabIndex={0} onKeyDown={e => e.key === 'Enter' && handleTagClick(tag)}
-                      >
-                        #{tag} <small>{count}</small>
-                      </span>
-                    ))}
-                  </>
+                  {currentTag && (
+                    <span className="lx-tag-chip clear-tag" onClick={() => setCurrentTag(null)}
+                      role="button" tabIndex={0}>✕ semua</span>
+                  )}
+                  {sortedTags.map(([tag, count]) => (
+                    <span key={tag} role="listitem"
+                      className={`lx-tag-chip${currentTag === tag ? ' active' : ''}`}
+                      onClick={() => handleTagClick(tag)}
+                      tabIndex={0} onKeyDown={e => e.key === 'Enter' && handleTagClick(tag)}
+                    >
+                      #{tag} <small>{count}</small>
+                    </span>
+                  ))}
+                </>
               }
             </div>
           </section>
@@ -670,7 +739,7 @@ export default function LexicaApp({ user, initialEntries }: Props) {
                 <div className="lx-empty-text">
                   {hasSearch ? 'Tidak ada hasil untuk pencarian ini'
                     : showFavoritesOnly ? 'Belum ada entri favorit'
-                    : 'Belum ada catatan di sini.\nMulai tambahkan di atas!'}
+                      : 'Belum ada catatan di sini.\nMulai tambahkan di atas!'}
                 </div>
               </div>
             ) : filtered.map(entry => (
