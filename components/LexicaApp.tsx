@@ -92,6 +92,10 @@ export default function LexicaApp({ user, initialEntries }: Props) {
   // ── Import JSON State ──
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // ── User Menu Dropdown State ──
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
   // ── Filter/sort state ──
   const [currentFilter, setCurrentFilter] = useState<FilterType>('all')
   const [currentTag, setCurrentTag] = useState<string | null>(null)
@@ -169,9 +173,35 @@ export default function LexicaApp({ user, initialEntries }: Props) {
     }
   }, [theme, isMounted])
 
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
+  // ── Click outside to close dropdown ──────────────────────────────────────
+  useEffect(() => {
+    if (!menuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuOpen])
 
-  // Cleanup in-flight requests on unmount
+  // ── Monetag In-Page Push (non-intrusive) ──────────────────────────────────
+  useEffect(() => {
+    // Ganti MONETAG_ZONE_ID dengan Zone ID dari dashboard Monetag kamu
+    const MONETAG_ZONE_ID = 'YOUR_MONETAG_ZONE_ID'
+    if (!MONETAG_ZONE_ID || MONETAG_ZONE_ID === 'YOUR_MONETAG_ZONE_ID') return
+    const s = document.createElement('script')
+    s.src = `https://cdn.pushprofit.com/inpagepush/push.min.js`
+    s.dataset.siteId = MONETAG_ZONE_ID
+    s.async = true
+    s.defer = true
+    document.head.appendChild(s)
+    return () => { s.remove() }
+  }, [])
+
+
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
   useEffect(() => {
     return () => { abortRef.current?.abort() }
   }, [])
@@ -536,21 +566,38 @@ export default function LexicaApp({ user, initialEntries }: Props) {
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
 
-          <div className="lx-user-menu">
-            <div className="lx-avatar" title={user.email}>
+          <div className="lx-user-menu" ref={menuRef}>
+            <button
+              className={`lx-avatar${menuOpen ? ' active' : ''}`}
+              title={user.email}
+              onClick={() => setMenuOpen(o => !o)}
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+              aria-label="Menu pengguna"
+            >
               {(user.name || user.email)[0].toUpperCase()}
-            </div>
-            <div className="lx-user-dropdown">
-              <div className="lx-dropdown-email">{user.email}</div>
+            </button>
+            {menuOpen && (
+              <div className="lx-user-dropdown" role="menu">
+                <div className="lx-dropdown-email">{user.email}</div>
 
-              <input type="file" accept="application/json" style={{ display: 'none' }}
-                ref={fileInputRef} onChange={handleImportJSON} />
-              <button onClick={() => fileInputRef.current?.click()} className="lx-dropdown-item">📥 Import JSON</button>
-              <button onClick={() => exportJSON(entries)} className="lx-dropdown-item">📦 Export JSON</button>
-              <button onClick={() => exportCSV(entries)} className="lx-dropdown-item">📊 Export CSV</button>
-              <div className="lx-dropdown-divider" />
-              <button onClick={signOut} className="lx-dropdown-item danger">🚪 Keluar</button>
-            </div>
+                <input type="file" accept="application/json" style={{ display: 'none' }}
+                  ref={fileInputRef} onChange={handleImportJSON} />
+                <button onClick={() => { fileInputRef.current?.click(); setMenuOpen(false) }} className="lx-dropdown-item" role="menuitem">
+                  <span className="lx-dropdown-icon">📥</span> Import JSON
+                </button>
+                <button onClick={() => { exportJSON(entries); setMenuOpen(false) }} className="lx-dropdown-item" role="menuitem">
+                  <span className="lx-dropdown-icon">📦</span> Export JSON
+                </button>
+                <button onClick={() => { exportCSV(entries); setMenuOpen(false) }} className="lx-dropdown-item" role="menuitem">
+                  <span className="lx-dropdown-icon">📊</span> Export CSV
+                </button>
+                <div className="lx-dropdown-divider" />
+                <button onClick={() => { signOut(); setMenuOpen(false) }} className="lx-dropdown-item danger" role="menuitem">
+                  <span className="lx-dropdown-icon">🚪</span> Keluar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -659,43 +706,53 @@ export default function LexicaApp({ user, initialEntries }: Props) {
           </section>
 
           {/* Adsterra Native Banner */}
-          <section style={{ marginTop: 'auto', paddingTop: '20px' }}>
-            <div className="lx-section-label" style={{ fontSize: '0.7rem', color: 'var(--text3)', textAlign: 'center' }}>Sponsor</div>
+          <section style={{ marginTop: 'auto', paddingTop: '16px' }}>
+            <div className="lx-section-label" style={{ textAlign: 'center', marginBottom: 10 }}>Sponsor</div>
             <div
               id="adsterra-banner-zone"
               style={{
                 position: 'relative',
                 width: '100%',
-                minHeight: '270px',
+                minHeight: '250px',
                 background: 'var(--surface2)',
-                border: '1px dashed var(--border)',
+                border: '1px solid var(--border)',
                 borderRadius: 'var(--radius)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden'
+                overflow: 'hidden',
               }}
             >
-              {/* Fallback Invite Banner (Behind) */}
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 0 }}>
-                <a href="https://beta.publishers.adsterra.com/referral/B3k9zdrDU1" rel="nofollow" target="_blank" style={{ display: 'block' }}>
-                  <img alt="banner" src="https://landings-cdn.adsterratech.com/referralBanners/png/300%20x%20250%20px.png" style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }} />
-                </a>
-                <div style={{ marginTop: '8px', fontSize: '0.8rem' }}>
-                  <a href="https://beta.publishers.adsterra.com/referral/B3k9zdrDU1" rel="nofollow" target="_blank" style={{ color: 'var(--word-color)', textDecoration: 'none', fontWeight: 600 }}>Referral link</a>
-                </div>
-              </div>
+              {/* Referral fallback (belakang) */}
+              <a
+                href="https://beta.publishers.adsterra.com/referral/B3k9zdrDU1"
+                rel="nofollow noopener" target="_blank"
+                style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  gap: 8, zIndex: 0,
+                  textDecoration: 'none',
+                }}
+              >
+                <img
+                  alt="Adsterra"
+                  src="https://landings-cdn.adsterratech.com/referralBanners/png/300%20x%20250%20px.png"
+                  style={{ maxWidth: '100%', height: 'auto', borderRadius: 6 }}
+                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--word-color)', fontWeight: 600 }}>
+                  Referral link
+                </span>
+              </a>
 
-              {/* Main Ad Container (Front) */}
-              <div id="container-bfb9de0c89a5d79e61c41aa98e012599" style={{ position: 'relative', zIndex: 10 }}></div>
+              {/* Adsterra native ad (depan — akan override fallback jika ad loaded) */}
+              <div id="container-bfb9de0c89a5d79e61c41aa98e012599"
+                style={{ position: 'relative', zIndex: 10 }} />
               <script type="text/javascript" dangerouslySetInnerHTML={{
-                __html: `
-                  var script = document.createElement('script');
-                  script.async = true;
-                  script.dataset.cfasync = "false";
-                  script.src = "https://immoderatescarsheer.com/bfb9de0c89a5d79e61c41aa98e012599/invoke.js";
-                  document.getElementById('container-bfb9de0c89a5d79e61c41aa98e012599').appendChild(script);
-                `
+                __html: `(function(){
+  var s=document.createElement('script');
+  s.async=true; s.dataset.cfasync='false';
+  s.src='//immoderatescarsheer.com/bfb9de0c89a5d79e61c41aa98e012599/invoke.js';
+  var c=document.getElementById('container-bfb9de0c89a5d79e61c41aa98e012599');
+  if(c) c.appendChild(s);
+})()`
               }} />
             </div>
           </section>
@@ -806,6 +863,8 @@ export default function LexicaApp({ user, initialEntries }: Props) {
               />
             ))}
           </div>
+          {/* Monetag In-Page Push Zone — non-intrusive, bottom of content */}
+          <div id="monetag-inpage-zone" style={{ marginTop: 32, minHeight: 0 }} />
         </main>
       </div>
 
@@ -965,21 +1024,43 @@ const CSS = `
   display:flex; align-items:center; justify-content:center;
   font-size:0.8rem; font-weight:700; color:#0e0e11; cursor:pointer;
   user-select:none; flex-shrink:0;
+  border:2px solid transparent;
+  transition:all var(--transition);
 }
+.lx-avatar:hover { border-color:var(--accent); box-shadow:0 0 0 3px rgba(200,169,110,0.18); }
+.lx-avatar.active { border-color:var(--accent); box-shadow:0 0 0 3px rgba(200,169,110,0.22); }
 .lx-user-dropdown {
-  display:none; position:absolute; right:0; top:calc(100% + 8px);
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:10px; min-width:190px; z-index:200;
-  box-shadow:0 8px 32px rgba(0,0,0,0.45);
+  position:absolute; right:0; top:calc(100% + 10px);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px; min-width:200px; z-index:500;
+  box-shadow:0 12px 40px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
   overflow:hidden;
+  animation:dropdownIn 0.15s cubic-bezier(0.16,1,0.3,1);
+  transform-origin:top right;
 }
-.lx-user-menu:hover .lx-user-dropdown,
-.lx-user-menu:focus-within .lx-user-dropdown { display:block; }
-.lx-dropdown-email { padding:10px 14px; font-size:0.76rem; color:var(--text3); border-bottom:1px solid var(--border); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.lx-dropdown-item { display:block; width:100%; text-align:left; background:none; border:none; padding:10px 14px; color:var(--text2); font-family:var(--font-dm-sans),sans-serif; font-size:0.83rem; cursor:pointer; transition:background 0.12s; }
+@keyframes dropdownIn {
+  from { opacity:0; transform:scale(0.93) translateY(-6px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.lx-dropdown-email {
+  padding:11px 14px 10px;
+  font-size:0.74rem; color:var(--text3);
+  border-bottom:1px solid var(--border);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  background:var(--surface2);
+}
+.lx-dropdown-icon { display:inline-block; width:18px; text-align:center; margin-right:2px; }
+.lx-dropdown-item {
+  display:flex; align-items:center; width:100%; text-align:left;
+  background:none; border:none; padding:10px 14px;
+  color:var(--text2); font-family:var(--font-dm-sans),sans-serif;
+  font-size:0.83rem; cursor:pointer; transition:background 0.12s,color 0.12s;
+  gap:4px;
+}
 .lx-dropdown-item:hover { background:var(--surface2); color:var(--text); }
 .lx-dropdown-item.danger { color:var(--danger); }
-.lx-dropdown-item.danger:hover { background:rgba(224,108,117,0.1); }
+.lx-dropdown-item.danger:hover { background:rgba(224,108,117,0.1); color:var(--danger); }
 .lx-dropdown-divider { height:1px; background:var(--border); margin:4px 0; }
 
 /* Main layout */
