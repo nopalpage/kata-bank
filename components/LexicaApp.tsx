@@ -679,8 +679,9 @@ export default function LexicaApp({ user, initialEntries }: Props) {
                 overflow: 'hidden'
               }}
             >
-              {<script async="async" data-cfasync="false" src="https://pl28839677.effectivegatecpm.com/bfb9de0c89a5d79e61c41aa98e012599/invoke.js"></script>
-<div id="container-bfb9de0c89a5d79e61c41aa98e012599"></div>}
+              {`<script async="async" data-cfasync="false" src="https://pl28839677.effectivegatecpm.com/bfb9de0c89a5d79e61c41aa98e012599/invoke.js"></script>
+<div id="container-bfb9de0c89a5d79e61c41aa98e012599"></div>
+`}
 
             </div>
           </section>
