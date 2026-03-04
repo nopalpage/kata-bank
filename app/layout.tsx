@@ -66,31 +66,17 @@ export default function RootLayout({
       className={`${playfair.variable} ${dmMono.variable} ${dmSans.variable}`}
     >
       <head>
-        {/* Placeholder Script PopAds (Tanpa Syarat Minimum Traffic) */}
-        <script type="text/javascript" data-cfasync="false" dangerouslySetInnerHTML={{
-          __html: `
-            /* Paste Script PopAds Anda di sini */
-            var _pop = _pop || [];
-            _pop.push(['siteId', 0000000]);
-            _pop.push(['minBid', 0]);
-            _pop.push(['popundersPerIP', 0]);
-            _pop.push(['delayBetween', 0]);
-            _pop.push(['default', false]);
-            _pop.push(['defaultPerDay', 0]);
-            _pop.push(['topmostLayer', false]);
-            (function() {
-              var pa = document.createElement('script'); pa.type = 'text/javascript'; pa.async = true;
-              var s = document.getElementsByTagName('script')[0]; 
-              pa.src = '//c1.popads.net/pop.js';
-              pa.onerror = function() {
-                var sa = document.createElement('script'); sa.type = 'text/javascript'; sa.async = true;
-                sa.src = '//c2.popads.net/pop.js';
-                s.parentNode.insertBefore(sa, s);
-              };
-              s.parentNode.insertBefore(pa, s);
-            })();
-          `
+        {/* Push · Particular tag */}
+        <script src="https://5gvci.com/act/files/tag.min.js?z=10680483" data-cfasync="false" async></script>
+
+        {/* Onclick · Golden tag */}
+        <script dangerouslySetInnerHTML={{
+          __html: `(function(s){s.dataset.zone='10680484',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`
         }}></script>
+
+        {/* Multitag · Excited tag */}
+        <script src="https://quge5.com/88/tag.min.js" data-zone="216287" async data-cfasync="false"></script>
+
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {
