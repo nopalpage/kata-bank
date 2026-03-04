@@ -18,9 +18,15 @@ export async function createClient() {
         },
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // Enforce secure cookie standard per user request
+              const secureOptions = {
+                ...options,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict' as const,
+              }
+              cookieStore.set(name, value, secureOptions)
+            })
           } catch {
             // Server Component — tidak bisa set cookies, aman diabaikan
           }

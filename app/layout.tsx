@@ -68,6 +68,20 @@ export default function RootLayout({
       <head>
         {/* Placeholder Script PropellerAds (Native Push/Popunder) */}
         <script data-cfasync="false" src="//XXXXXX.propellerads.com/xxxx/xxx.js"></script>
+
+        {/* Register Service Worker for PWA / Caching */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(
+                  function(registration) { console.log('SW registered with scope:', registration.scope); },
+                  function(err) { console.log('SW registration failed:', err); }
+                );
+              });
+            }
+          `
+        }} />
       </head>
       <body>{children}</body>
     </html>
