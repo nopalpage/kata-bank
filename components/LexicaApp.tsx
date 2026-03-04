@@ -658,7 +658,7 @@ export default function LexicaApp({ user, initialEntries }: Props) {
             </div>
           </section>
 
-          {/* Adsterra Native Banner Placeholder */}
+          {/* Adsterra Native Banner */}
           <section style={{ marginTop: 'auto', paddingTop: '20px' }}>
             <div className="lx-section-label" style={{ fontSize: '0.7rem', color: 'var(--text3)', textAlign: 'center' }}>Sponsor</div>
             <div
@@ -679,7 +679,16 @@ export default function LexicaApp({ user, initialEntries }: Props) {
                 overflow: 'hidden'
               }}
             >
-              {`<!-- Paste Script Adsterra Format 300x250 (Native Banner) di sini -->`}
+              <div id="container-bfb9de0c89a5d79e61c41aa98e012599"></div>
+              <script type="text/javascript" dangerouslySetInnerHTML={{
+                __html: `
+                  var script = document.createElement('script');
+                  script.async = true;
+                  script.dataset.cfasync = "false";
+                  script.src = "https://immoderatescarsheer.com/bfb9de0c89a5d79e61c41aa98e012599/invoke.js";
+                  document.getElementById('container-bfb9de0c89a5d79e61c41aa98e012599').appendChild(script);
+                `
+              }} />
             </div>
           </section>
         </aside>
