@@ -32,7 +32,7 @@ export default function AuthPage() {
         email, password,
         options: {
           data: { full_name: name },
-          emailRedirectTo: 'https://kata-bank.vercel.app/auth/callback'
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       })
       if (error) {
@@ -56,7 +56,7 @@ export default function AuthPage() {
     setLoading(true)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'https://kata-bank.vercel.app/auth/callback' }
+      options: { redirectTo: `${window.location.origin}/auth/callback` }
     })
   }
 
