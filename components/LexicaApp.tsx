@@ -664,22 +664,30 @@ export default function LexicaApp({ user, initialEntries }: Props) {
             <div
               id="adsterra-banner-zone"
               style={{
+                position: 'relative',
                 width: '100%',
-                minHeight: '250px',
+                minHeight: '270px',
                 background: 'var(--surface2)',
                 border: '1px dashed var(--border)',
                 borderRadius: 'var(--radius)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--text3)',
-                fontSize: '0.8rem',
-                textAlign: 'center',
-                padding: '20px',
                 overflow: 'hidden'
               }}
             >
-              <div id="container-bfb9de0c89a5d79e61c41aa98e012599"></div>
+              {/* Fallback Invite Banner (Behind) */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 0 }}>
+                <a href="https://beta.publishers.adsterra.com/referral/B3k9zdrDU1" rel="nofollow" target="_blank" style={{ display: 'block' }}>
+                  <img alt="banner" src="https://landings-cdn.adsterratech.com/referralBanners/png/300%20x%20250%20px.png" style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }} />
+                </a>
+                <div style={{ marginTop: '8px', fontSize: '0.8rem' }}>
+                  <a href="https://beta.publishers.adsterra.com/referral/B3k9zdrDU1" rel="nofollow" target="_blank" style={{ color: 'var(--word-color)', textDecoration: 'none', fontWeight: 600 }}>Referral link</a>
+                </div>
+              </div>
+
+              {/* Main Ad Container (Front) */}
+              <div id="container-bfb9de0c89a5d79e61c41aa98e012599" style={{ position: 'relative', zIndex: 10 }}></div>
               <script type="text/javascript" dangerouslySetInnerHTML={{
                 __html: `
                   var script = document.createElement('script');
