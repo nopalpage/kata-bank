@@ -657,6 +657,31 @@ export default function LexicaApp({ user, initialEntries }: Props) {
               }
             </div>
           </section>
+
+          {/* Adsterra Native Banner Placeholder */}
+          <section style={{ marginTop: 'auto', paddingTop: '20px' }}>
+            <div className="lx-section-label" style={{ fontSize: '0.7rem', color: 'var(--text3)', textAlign: 'center' }}>Sponsor</div>
+            <div
+              id="adsterra-banner-zone"
+              style={{
+                width: '100%',
+                minHeight: '250px',
+                background: 'var(--surface2)',
+                border: '1px dashed var(--border)',
+                borderRadius: 'var(--radius)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text3)',
+                fontSize: '0.8rem',
+                textAlign: 'center',
+                padding: '20px',
+                overflow: 'hidden'
+              }}
+            >
+              {`<!-- Paste Script Adsterra Format 300x250 (Native Banner) di sini -->`}
+            </div>
+          </section>
         </aside>
 
         {/* MAIN */}
