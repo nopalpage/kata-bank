@@ -21,6 +21,23 @@
   --transition: 0.18s ease;
 }
 
+[data-theme="light"] {
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface2: #f1f3f5;
+  --surface3: #e9ecef;
+  --border: #dee2e6;
+  --accent: #b28945;
+  --accent2: #5f51ad;
+  --accent3: #3b8a84;
+  --text: #212529;
+  --text2: #495057;
+  --text3: #868e96;
+  --word-color: #b28945;
+  --sentence-color: #5f51ad;
+  --explanation-color: #3b8a84;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { height: 100%; }
