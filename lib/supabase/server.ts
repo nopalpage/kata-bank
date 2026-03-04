@@ -23,7 +23,7 @@ export async function createClient() {
               const secureOptions = {
                 ...options,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict' as const,
+                sameSite: 'lax' as const,
               }
               cookieStore.set(name, value, secureOptions)
             })
