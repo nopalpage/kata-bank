@@ -66,10 +66,31 @@ export default function RootLayout({
       className={`${playfair.variable} ${dmMono.variable} ${dmSans.variable}`}
     >
       <head>
-        {/* Placeholder Script PropellerAds (Native Push/Popunder) */}
-        <script data-cfasync="false" src="//XXXXXX.propellerads.com/xxxx/xxx.js"></script>
-
-        {/* Register Service Worker for PWA / Caching */}
+        {/* Placeholder Script PopAds (Tanpa Syarat Minimum Traffic) */}
+        <script type="text/javascript" data-cfasync="false" dangerouslySetInnerHTML={{
+          __html: `
+            /* Paste Script PopAds Anda di sini */
+            var _pop = _pop || [];
+            _pop.push(['siteId', 0000000]);
+            _pop.push(['minBid', 0]);
+            _pop.push(['popundersPerIP', 0]);
+            _pop.push(['delayBetween', 0]);
+            _pop.push(['default', false]);
+            _pop.push(['defaultPerDay', 0]);
+            _pop.push(['topmostLayer', false]);
+            (function() {
+              var pa = document.createElement('script'); pa.type = 'text/javascript'; pa.async = true;
+              var s = document.getElementsByTagName('script')[0]; 
+              pa.src = '//c1.popads.net/pop.js';
+              pa.onerror = function() {
+                var sa = document.createElement('script'); sa.type = 'text/javascript'; sa.async = true;
+                sa.src = '//c2.popads.net/pop.js';
+                s.parentNode.insertBefore(sa, s);
+              };
+              s.parentNode.insertBefore(pa, s);
+            })();
+          `
+        }}></script>
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {
@@ -84,6 +105,6 @@ export default function RootLayout({
         }} />
       </head>
       <body>{children}</body>
-    </html>
+    </html >
   )
 }
