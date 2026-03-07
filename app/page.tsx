@@ -44,8 +44,8 @@ export default async function HomePage() {
   const popularArticles = (popular ?? []) as Article[]
 
   const WORD_PAIRS = [
-    ['MAKAN', 'NASI'],['SAPI', 'IKAN'],['NASI', 'IKAT'],['IKAT', 'TULIS'],
-    ['TULIS', 'SURAT'],['SURAT', 'TINTA'],['TINTA', 'AKHIR'],['AKHIR', 'RUSAK'],
+    ['MAKAN', 'NASI'], ['SAPI', 'IKAN'], ['NASI', 'IKAT'], ['IKAT', 'TULIS'],
+    ['TULIS', 'SURAT'], ['SURAT', 'TINTA'], ['TINTA', 'AKHIR'], ['AKHIR', 'RUSAK'],
   ]
 
   return (
@@ -53,6 +53,34 @@ export default async function HomePage() {
       <Header />
 
       <main style={{ paddingTop: 80, minHeight: '100vh' }}>
+        <style>{`
+          .category-link {
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 18px 16px;
+            display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+            transition: all 0.22s ease;
+            text-decoration: none;
+          }
+          .category-link:hover {
+            border-color: var(--hover-border) !important;
+            background: var(--surface2) !important;
+            transform: translateY(-2px);
+          }
+          .popular-link {
+            display: flex; align-items: center; gap: 16px;
+            background: var(--surface);
+            border-radius: 12px; padding: 16px 20px;
+            margin-bottom: 4px; transition: all 0.2s ease;
+            border: 1px solid rgba(255,255,255,0.07);
+            text-decoration: none;
+          }
+          .popular-link:hover {
+            background: var(--surface2) !important;
+            border-color: rgba(255,107,53,0.3) !important;
+          }
+        `}</style>
 
         {/* ── HERO ── */}
         <section style={{ position: 'relative', overflow: 'hidden', padding: '80px 0 60px' }}>
@@ -103,7 +131,7 @@ export default async function HomePage() {
                   color: 'var(--text2)', lineHeight: 1.7,
                   maxWidth: 540, marginBottom: 28,
                 }}>
-                  Panduan lengkap strategi, kosakata KBBI, dan tips trik untuk memenangkan 
+                  Panduan lengkap strategi, kosakata KBBI, dan tips trik untuk memenangkan
                   permainan Sambung Kata di Roblox. Jadilah yang terbaik!
                 </p>
 
@@ -193,25 +221,8 @@ export default async function HomePage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
               {Object.entries(CATEGORIES).map(([slug, cat]) => (
                 <Link key={slug} href={`/kategori/${slug}`}
-                  style={{
-                    background: 'var(--surface)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    borderRadius: 14,
-                    padding: '18px 16px',
-                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
-                    transition: 'all 0.22s ease',
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = `${cat.color}50`
-                    ;(e.currentTarget as HTMLElement).style.background = 'var(--surface2)'
-                    ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'
-                    ;(e.currentTarget as HTMLElement).style.background = 'var(--surface)'
-                    ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-                  }}
+                  className="category-link"
+                  style={{ '--hover-border': `${cat.color}50` } as React.CSSProperties}
                 >
                   <div style={{
                     fontSize: '1.6rem', width: 40, height: 40,
@@ -258,22 +269,7 @@ export default async function HomePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {popularArticles.map((article, i) => (
                   <Link key={article.id} href={`/artikel/${article.slug}`}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 16,
-                      background: 'var(--surface)',
-                      borderRadius: 12, padding: '16px 20px',
-                      marginBottom: 4, transition: 'all 0.2s ease',
-                      border: '1px solid rgba(255,255,255,0.07)',
-                      textDecoration: 'none',
-                    }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'var(--surface2)'
-                      ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,107,53,0.3)'
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'var(--surface)'
-                      ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'
-                    }}
+                    className="popular-link"
                   >
                     <span style={{
                       fontFamily: 'var(--font-display)',
@@ -292,7 +288,7 @@ export default async function HomePage() {
                       </div>
                     </div>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                      <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </Link>
                 ))}
@@ -323,7 +319,7 @@ export default async function HomePage() {
                 SIAP BERMAIN?
               </h2>
               <p style={{ color: 'var(--text2)', maxWidth: 480, margin: '0 auto 24px', lineHeight: 1.7 }}>
-                Terapkan semua strategi yang kamu pelajari di sini. 
+                Terapkan semua strategi yang kamu pelajari di sini.
                 Buka Sambung Kata di Roblox dan tunjukkan kemampuan kamu!
               </p>
               <a
@@ -340,8 +336,8 @@ export default async function HomePage() {
               >
                 🎮 Buka Sambung Kata di Roblox
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-                  <path d="M15 3h6v6M10 14L21 3"/>
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                  <path d="M15 3h6v6M10 14L21 3" />
                 </svg>
               </a>
             </div>
